@@ -180,6 +180,12 @@ RUN if [ "$MODEL_TYPE" = "z-image-turbo" ]; then \
     fi
 
 # Stage 3: Final image
+RUN if [ "$MODEL_TYPE" = "qwen21" ]; then \
+      wget -q -O models/diffusion_models/qwen_image_2.1_bf16.safetensors https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_bf16.safetensors && \
+      wget -q -O models/text_encoders/qwen3vl_8b_bf16.safetensors https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_bf16.safetensors && \
+      wget -q -O models/vae/qwen_image_2.1_vae_bf16.safetensors https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors; \
+    fi
+
 FROM base AS final
 
 # Copy models from stage 2 to the final image
