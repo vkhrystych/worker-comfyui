@@ -1,129 +1,122 @@
 {
   "tests": [
     {
-      "name": "basic_test",
+      "name": "qwen21_smoke",
       "input": {
-        "images": [
-          {
-            "name": "test.png",
-            "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMklEQVR4nGI5ZdXAQEvARFPTRy0YtWDUglELRi0YtWDUglELRi0YtWDUAioCQAAAAP//E24Bx3jUKuYAAAAASUVORK5CYII="
-          }
-        ],
         "workflow": {
-          "6": {
+          "unet": {
+            "class_type": "UNETLoader",
             "inputs": {
-              "text": "anime cat with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a construction outfit placing a fancy black forest cake with candles on top of a dinner table of an old dark Victorian mansion lit by candlelight with a bright window to the foggy forest and very expensive stuff everywhere there are paintings on the walls",
-              "clip": ["30", 1]
-            },
-            "class_type": "CLIPTextEncode",
-            "_meta": {
-              "title": "CLIP Text Encode (Positive Prompt)"
+              "unet_name": "qwen_image_2.1_bf16.safetensors",
+              "weight_dtype": "default"
             }
           },
-          "8": {
+          "cache": {
+            "class_type": "QwenImage21Cache",
             "inputs": {
-              "samples": ["31", 0],
-              "vae": ["30", 2]
-            },
+              "model": [
+                "unet",
+                0
+              ],
+              "device": "auto",
+              "dtype": "default"
+            }
+          },
+          "clip": {
+            "class_type": "CLIPLoader",
+            "inputs": {
+              "clip_name": "qwen3vl_8b_bf16.safetensors",
+              "type": "qwen_image",
+              "device": "default"
+            }
+          },
+          "vae": {
+            "class_type": "VAELoader",
+            "inputs": {
+              "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+            }
+          },
+          "enc": {
+            "class_type": "TextEncodeQwenImage21",
+            "inputs": {
+              "clip": [
+                "clip",
+                0
+              ],
+              "vae": [
+                "vae",
+                0
+              ],
+              "prompt": "A plain studio photo of a red apple on a white table.",
+              "negative_prompt": "",
+              "resolution": 1024
+            }
+          },
+          "sample": {
+            "class_type": "KSampler",
+            "inputs": {
+              "model": [
+                "cache",
+                0
+              ],
+              "positive": [
+                "enc",
+                0
+              ],
+              "negative": [
+                "enc",
+                1
+              ],
+              "seed": 11,
+              "steps": 4,
+              "cfg": 1.0,
+              "sampler_name": "euler",
+              "scheduler": "simple",
+              "denoise": 1.0,
+              "latent_image": [
+                "latent",
+                0
+              ]
+            }
+          },
+          "decode": {
             "class_type": "VAEDecode",
-            "_meta": {
-              "title": "VAE Decode"
-            }
-          },
-          "9": {
             "inputs": {
-              "filename_prefix": "ComfyUI",
-              "images": ["8", 0]
-            },
-            "class_type": "SaveImage",
-            "_meta": {
-              "title": "Save Image"
+              "samples": [
+                "sample",
+                0
+              ],
+              "vae": [
+                "vae",
+                0
+              ]
             }
           },
-          "27": {
+          "save": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "decode",
+                0
+              ],
+              "filename_prefix": "qwen21"
+            }
+          },
+          "latent": {
+            "class_type": "EmptySD3LatentImage",
             "inputs": {
               "width": 512,
               "height": 512,
               "batch_size": 1
-            },
-            "class_type": "EmptySD3LatentImage",
-            "_meta": {
-              "title": "EmptySD3LatentImage"
-            }
-          },
-          "30": {
-            "inputs": {
-              "ckpt_name": "flux1-dev-fp8.safetensors"
-            },
-            "class_type": "CheckpointLoaderSimple",
-            "_meta": {
-              "title": "Load Checkpoint"
-            }
-          },
-          "31": {
-            "inputs": {
-              "seed": 243057879077961,
-              "steps": 10,
-              "cfg": 1,
-              "sampler_name": "euler",
-              "scheduler": "simple",
-              "denoise": 1,
-              "model": ["30", 0],
-              "positive": ["35", 0],
-              "negative": ["33", 0],
-              "latent_image": ["27", 0]
-            },
-            "class_type": "KSampler",
-            "_meta": {
-              "title": "KSampler"
-            }
-          },
-          "33": {
-            "inputs": {
-              "text": "",
-              "clip": ["30", 1]
-            },
-            "class_type": "CLIPTextEncode",
-            "_meta": {
-              "title": "CLIP Text Encode (Negative Prompt)"
-            }
-          },
-          "35": {
-            "inputs": {
-              "guidance": 3.5,
-              "conditioning": ["6", 0]
-            },
-            "class_type": "FluxGuidance",
-            "_meta": {
-              "title": "FluxGuidance"
-            }
-          },
-          "38": {
-            "inputs": {
-              "images": ["8", 0]
-            },
-            "class_type": "PreviewImage",
-            "_meta": {
-              "title": "Preview Image"
-            }
-          },
-          "40": {
-            "inputs": {
-              "filename_prefix": "ComfyUI",
-              "images": ["8", 0]
-            },
-            "class_type": "SaveImage",
-            "_meta": {
-              "title": "Save Image"
             }
           }
         }
       },
-      "timeout": 300000
+      "timeout": 600000
     }
   ],
   "config": {
-    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuTypeId": "NVIDIA RTX A6000",
     "gpuCount": 1,
     "env": [
       {
@@ -131,6 +124,10 @@
         "value": "false"
       }
     ],
-    "allowedCudaVersions": ["12.8", "12.9", "13.0"]
+    "allowedCudaVersions": [
+      "12.8",
+      "12.9",
+      "13.0"
+    ]
   }
 }
