@@ -79,15 +79,12 @@ RUN if [ "$ENABLE_PYTORCH_UPGRADE" = "true" ]; then \
 # RUN downgrades within one layer, so the unwanted versions aren't left behind
 # bloating the image.
 #
-# torch is installed FIRST, pinned to +cu128 builds: ComfyUI's requirements.txt
-# declares a bare `torch`, and default PyPI serves CUDA 13 builds (torch's PyPI
-# wheels depend on nvidia-*-cu13 since 2.11) that require driver >= 580. Hosts
-# allowed in .runpod/hub.json advertise CUDA 12.8/12.9 (driver 570/575), where
-# a cu13 torch fails CUDA init at startup. cu128 builds run on driver >= 570,
-# i.e. every allowed host. Installing torch first satisfies the bare `torch`
-# requirement so the PyPI pass doesn't touch it.
+# torch is installed FIRST, pinned to +cu130 builds (this fork: Qwen Image 2.1 worker). With cu128 builds ComfyUI
+# warns "You need pytorch with cu130 or higher to use optimized CUDA operations" and keeps its comfy_kitchen CUDA
+# backend disabled. cu130 wheels need NVIDIA driver >= 580, so the endpoint and .runpod/tests.json allow CUDA 13.x
+# hosts only. Installing torch first satisfies ComfyUI's bare `torch` requirement so the PyPI pass doesn't touch it.
 RUN uv pip install torch==2.11.0 torchvision==0.26.0 torchaudio==2.11.0 \
-      --index-url https://download.pytorch.org/whl/cu128 \
+      --index-url https://download.pytorch.org/whl/cu130 \
     && uv pip install -r /comfyui/requirements.txt \
     && for r in /comfyui/custom_nodes/*/requirements.txt; do \
          [ -f "$r" ] && uv pip install -r "$r" || true; \
